@@ -4,13 +4,15 @@
 #include <time.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 
-void travellingSalesman(int n, double path[n], double cost[n][n], double * costSum);
+void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum);
 void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange, double zRange);
 void generateDistanceCost(int n, double pointsArr[n][3], double cost[n][n]);
-void printCostArray(int n, double arr[n][n]);
-void printPathArray(int n, double arr[n]);
+//void generateEnergyCost(int n, double pointsArr[n][3], double cost[n][n]);
+void printDistanceCostArray(int n, double arr[n][n]);
+void printPathArray(int n, int arr[n]);
 void printPointsArray(int n, double arr[n][3]);
 
 int main()
@@ -39,10 +41,10 @@ int main()
     //generate 3d distance cost and print
     double cost[n][n];
     generateDistanceCost(n, pointsArr, cost);
-    printCostArray(n, cost);
+    printDistanceCostArray(n, cost);
 
     //final path salesman takes
-    double path[n];
+    int path[n];
     //cost of final path
     double costSum;
 
@@ -57,15 +59,41 @@ int main()
     return 0;
 
 }
+void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
+{
+	double sum = 0.0;
+	//int counter = 0;
+	//int j = 0, i = 0;
+	double minCost;
+    int minIndex;
+    int lastNode = 0;
+    path[0] = 1;
 
-void travellingSalesman(int n, double path[n], double cost[n][n], double * costSum){
-
-    //replace with greedy alg
+	//initialize visited nodes
+    int visitedNodes[n];
     for(int i = 0; i < n; i++){
-        path[i] = 0;
+        visitedNodes[i] = 0;
+    }
+    visitedNodes[0] = 1;
+
+    while(lastNode < n-1){
+        minCost = LONG_MAX;
+        for(int i = 0; i < n; i++){
+            if((cost[path[lastNode] - 1][i] < minCost) && (path[lastNode] - 1 != i) && (visitedNodes[i] == 0)){
+                minCost = cost[path[lastNode] - 1][i];
+                minIndex = i;
+            }
+        }
+        lastNode++;
+        path[lastNode] = minIndex+1;
+        sum += minCost;
+        visitedNodes[minIndex] = 1;
+        
     }
 
-    *costSum = 0;
+    *costSum = sum + cost[path[n-1]-1][0];
+    
+	
 }
 
 void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange, double zRange){
@@ -101,7 +129,28 @@ void generateDistanceCost(int n, double pointsArr[n][3], double cost[n][n]){
     }
 }
 
-void printCostArray(int n, double arr[n][n]){
+/*void generateEnergyCost(int n, double pointsArr[n][3], double cost[n][n]){
+    double dist;
+    double x2;
+    double y2;
+    double z2;
+    for(int i = 0; i < n; i++){
+        for(int j = i; j < n; j++){
+            if(j == i){
+                cost[j][j] = 0;
+            }
+            x2 = pow(pointsArr[i][0] - pointsArr[j][0], 2);
+            y2 = pow(pointsArr[i][1] - pointsArr[j][1], 2);
+            z2 = pow(pointsArr[i][2] - pointsArr[j][2], 2);
+
+            dist = pow(x2 + y2 + z2, .5);
+            cost[i][j] = dist;
+            cost[j][i] = dist;
+        }
+    }
+}**/
+
+void printDistanceCostArray(int n, double arr[n][n]){
     printf("Cost array elements:\n");
     for(int i=0; i<n; i++) {
         printf("\n");
@@ -112,10 +161,10 @@ void printCostArray(int n, double arr[n][n]){
     printf("\n\n");
 }
 
-void printPathArray(int n, double arr[n]){
+void printPathArray(int n, int arr[n]){
     printf("Path array elements:\n");
     for(int i=0; i<n; i++) {
-        printf("%lf ", arr[i]);
+        printf("%d ", arr[i]);
     }
     printf("\n\n");
 }
