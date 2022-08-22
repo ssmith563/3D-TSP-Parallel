@@ -5,7 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
-
+#include <omp.h>
 
 void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum);
 void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange, double zRange);
@@ -22,8 +22,7 @@ int main()
     double zRange;
     int n;
     
-    double timediff;
-    clock_t start,end;
+    //double start = omp_get_wtime();
 
     //Gets user input
     printf("Enter x Range: ");
@@ -51,27 +50,23 @@ int main()
     //cost of final path
     double costSum;
 
+    double start = omp_get_wtime();
 
-    start = clock();
     //main tsp function
     travellingSalesman(n, path, cost, &costSum);
-    end = clock();
-    timediff = (double)(end - start) / CLOCKS_PER_SEC;
+    double finish = omp_get_wtime();
+    double elapsed = finish - start;
 
-
+    
 
     //print final path
     printPathArray(n, path);
     
-    printf("Minimum cost:\n%.6f\n", costSum);
+    printf("Minimum cost:\n%lf\n", costSum);
     
     
-
-   
     
-
-    printf("Time: %.5f", timediff);
-    printf("\n");
+    printf("Exec took %f seconds\n", elapsed);
 
     return 0;
 
@@ -79,8 +74,8 @@ int main()
 void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
 {
 	double sum = 0.0;
-	//int counter = 0;
-	//int j = 0, i = 0;
+	
+	
 	double minCost;
     int minIndex;
     int lastNode = 0;
@@ -88,6 +83,8 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
 
 	//initialize visited nodes
     int visitedNodes[n];
+    
+   #pragma omp parallel for
     for(int i = 0; i < n; i++){
         visitedNodes[i] = 0;
     }
@@ -95,12 +92,14 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
 
     while(lastNode < n-1){
         minCost = LONG_MAX;
+   #pragma omp parallel for schedule(dynamic,1)
         for(int i = 0; i < n; i++){
             if((cost[path[lastNode] - 1][i] < minCost) && (path[lastNode] - 1 != i) && (visitedNodes[i] == 0)){
                 minCost = cost[path[lastNode] - 1][i];
                 minIndex = i;
             }
         }
+
         lastNode++;
         path[lastNode] = minIndex+1;
         sum += minCost;
