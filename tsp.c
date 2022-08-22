@@ -3,48 +3,48 @@
 #include <stdbool.h>
 #include <time.h>
 #include <string.h>
+#include <math.h>
 
 
+void travellingSalesman(int n, double path[n], double cost[n][n], double * costSum);
+void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange, double zRange);
+void generateDistanceCost(int n, double pointsArr[n][3], double cost[n][n]);
+void printCostArray(int n, double arr[n][n]);
+void printPathArray(int n, double arr[n]);
+void printPointsArray(int n, double arr[n][3]);
 
-void travellingSalesman(int n, int path[n], int cost[n][n], int * costSum);
-void printCostArray(int n, int arr[n][n]);
-void printPathArray(int n, int arr[n]);
-
-int main ()
+int main()
 {
-    //will replace with arguments
-    int n = 4;
+    double xRange;
+    double yRange;
+    double zRange;
+    int n;
     
-    //will replace with function call that calculates distance cost between 3d points
-    int cost[n][n];
-    cost[0][0] = 0;
-    cost[0][1] = 4;
-    cost[0][2] = 1;
-    cost[0][3] = 3;
+    //Gets user input
+    printf("Enter x Range: ");
+    scanf("%lf", &xRange);
+    printf("\nEnter y Range: ");
+    scanf("%lf", &yRange);
+    printf("\nEnter z Range: ");
+    scanf("%lf", &zRange);
+    printf("\nEnter number of points: ");
+    scanf("%d", &n);
+    printf("\n");
 
-    cost[1][0] = 4;
-    cost[1][1] = 0;
-    cost[1][2] = 2;
-    cost[1][3] = 1;
-
-    cost[2][0] = 1;
-    cost[2][1] = 2;
-    cost[2][2] = 0;
-    cost[2][3] = 5;
-
-    cost[3][0] = 3;
-    cost[3][1] = 1;
-    cost[3][2] = 5;
-    cost[3][3] = 0;
-
+    //generate points in array and print
+    double pointsArr[n][3];
+    generatePoints(n, pointsArr, xRange, yRange, zRange);
+    printPointsArray(n, pointsArr);
     
-    //prints cost array
+    //generate 3d distance cost and print
+    double cost[n][n];
+    generateDistanceCost(n, pointsArr, cost);
     printCostArray(n, cost);
 
     //final path salesman takes
-    int path[n];
+    double path[n];
     //cost of final path
-    int costSum;
+    double costSum;
 
     //main tsp function
     travellingSalesman(n, path, cost, &costSum);
@@ -52,13 +52,13 @@ int main ()
     //print final path
     printPathArray(n, path);
     
-    printf("%d\n", costSum);
+    printf("Minimum cost:\n%lf\n", costSum);
     
     return 0;
 
 }
 
-void travellingSalesman(int n, int path[n], int cost[n][n], int * costSum){
+void travellingSalesman(int n, double path[n], double cost[n][n], double * costSum){
 
     //replace with greedy alg
     for(int i = 0; i < n; i++){
@@ -68,21 +68,65 @@ void travellingSalesman(int n, int path[n], int cost[n][n], int * costSum){
     *costSum = 0;
 }
 
-void printCostArray(int n, int arr[n][n]){
-    printf("Two Dimensional array elements:\n");
+void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange, double zRange){
+    srand(0);
+    double xDiv = RAND_MAX/xRange;
+    double yDiv = RAND_MAX/yRange;
+    double zDiv = RAND_MAX/zRange;
+    for(int i = 0; i < n; i++){
+        pointsArr[i][0] = rand()/xDiv;
+        pointsArr[i][1] = rand()/yDiv;
+        pointsArr[i][2] = rand()/zDiv;
+    }
+}
+
+void generateDistanceCost(int n, double pointsArr[n][3], double cost[n][n]){
+    double dist;
+    double x2;
+    double y2;
+    double z2;
+    for(int i = 0; i < n; i++){
+        for(int j = i; j < n; j++){
+            if(j == i){
+                cost[j][j] = 0;
+            }
+            x2 = pow(pointsArr[i][0] - pointsArr[j][0], 2);
+            y2 = pow(pointsArr[i][1] - pointsArr[j][1], 2);
+            z2 = pow(pointsArr[i][2] - pointsArr[j][2], 2);
+
+            dist = pow(x2 + y2 + z2, .5);
+            cost[i][j] = dist;
+            cost[j][i] = dist;
+        }
+    }
+}
+
+void printCostArray(int n, double arr[n][n]){
+    printf("Cost array elements:\n");
     for(int i=0; i<n; i++) {
         printf("\n");
         for(int j=0;j<n;j++) {
-            printf("%d ", arr[i][j]);
+            printf("%lf ", arr[i][j]);
         }
     }
     printf("\n\n");
 }
 
-void printPathArray(int n, int arr[n]){
+void printPathArray(int n, double arr[n]){
     printf("Path array elements:\n");
     for(int i=0; i<n; i++) {
-        printf("%d ", arr[i]);
+        printf("%lf ", arr[i]);
+    }
+    printf("\n\n");
+}
+
+void printPointsArray(int n, double arr[n][3]){
+    printf("3D points:\n");
+    for(int i=0; i<n; i++) {
+        printf("\n");
+        for(int j=0;j<3;j++) {
+            printf("%lf ", arr[i][j]);
+        }
     }
     printf("\n\n");
 }
