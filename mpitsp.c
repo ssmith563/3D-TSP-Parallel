@@ -20,9 +20,9 @@ int main()
     int comm_sz;
     int my_rank;
     int n;
-    double xRange;
-    double yRange;
-    double zRange;
+    double xRange = 10;
+    double yRange = 10;
+    double zRange = 10;
     //printf("Enter x Range: ");
     
     MPI_Init(NULL, NULL);
@@ -34,13 +34,13 @@ int main()
         //Gets user input
         printf("Enter x Range: ");
         fflush( stdout );
-        scanf("%lf", &xRange);
+        //scanf("%lf", &xRange);
         printf("\nEnter y Range: ");
         fflush( stdout );
-        scanf("%lf", &yRange);
+        //scanf("%lf", &yRange);
         printf("\nEnter z Range: ");
         fflush( stdout );
-        scanf("%lf", &zRange);
+        //scanf("%lf", &zRange);
         printf("\nEnter number of points: ");
         fflush( stdout );
         scanf("%d", &n);
@@ -129,6 +129,8 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum,
     int my_first_i;
     int my_last_i;
 
+    double temp;
+
     if(my_rank < remainder){//splits n evenly among processes
         my_n_count = quotient + 1;
         my_first_i = my_rank*my_n_count;
@@ -141,7 +143,7 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum,
     
     for(int j = 0; j < n-1; j++){
         minc = LONG_MAX;
-        mini = 0;
+        mini = -1;
         for(int i = my_first_i; i < my_last_i; i++){
             if((cost[path[j] - 1][i] < minc) && (path[j] - 1 != i) && (visitedNodes[i] == 0)){
                 minc = cost[path[j] - 1][i];
@@ -155,12 +157,23 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum,
 
         }else{ 
             minIndex = mini;
+            temp = LONG_MAX;
+            if(mini == -1){
+            }
+            else if(cost[path[j] - 1][mini] < temp){
+                minIndex = mini;
+                temp = cost[path[j] - 1][minIndex];
+            }
+
             for (int q = 1; q < comm_sz; q++) {
                 /* Receive message from process q */
                 MPI_Recv(&mini, 1, MPI_INT, q,
                 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                if(cost[path[j] - 1][mini] < cost[path[j] - 1][minIndex]){
+                if(mini == -1){
+                }
+                else if(cost[path[j] - 1][mini] < temp){
                     minIndex = mini;
+                    temp = cost[path[j] - 1][minIndex];
                 }
                 
             }
