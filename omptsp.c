@@ -17,36 +17,39 @@ void printPointsArray(int n, double arr[n][3]);
 
 int main()
 {
-    double xRange;
-    double yRange;
-    double zRange;
-    int n;
+    double xRange = 10;
+    double yRange = 10;
+    double zRange = 10;
+    int n = 10000;
     
     //double start = omp_get_wtime();
 
     //Gets user input
     printf("Enter x Range: ");
-    scanf("%lf", &xRange);
+    //scanf("%lf", &xRange);
     printf("\nEnter y Range: ");
-    scanf("%lf", &yRange);
+    //scanf("%lf", &yRange);
     printf("\nEnter z Range: ");
-    scanf("%lf", &zRange);
+    //scanf("%lf", &zRange);
     printf("\nEnter number of points: ");
-    scanf("%d", &n);
+    //scanf("%d", &n);
     printf("\n");
 
     //generate points in array and print
-    double pointsArr[n][3];
+    //double pointsArr[n][3];
+    double (*pointsArr)[n] = malloc(sizeof(double[n][3]));
     generatePoints(n, pointsArr, xRange, yRange, zRange);
-    printPointsArray(n, pointsArr);
+    //printPointsArray(n, pointsArr);
     
     //generate 3d distance cost and print
-    double cost[n][n];
+    //double cost[n][n];
+    double (*cost)[n] = malloc(sizeof(double[n][n]));
     generateDistanceCost(n, pointsArr, cost);
-    printDistanceCostArray(n, cost);
+    //printDistanceCostArray(n, cost);
 
     //final path salesman takes
-    int path[n];
+    //int path[n];
+    int *path = malloc(n * sizeof *path);
     //cost of final path
     double costSum;
 
@@ -60,14 +63,16 @@ int main()
     
 
     //print final path
-    printPathArray(n, path);
+    //printPathArray(n, path);
     
     printf("Minimum cost:\n%lf\n", costSum);
     
     
     
     printf("Exec took %f seconds\n", elapsed);
-
+    free(cost);
+    free(pointsArr);
+    free(path);
     return 0;
 
 }
@@ -78,30 +83,47 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
 	
 	double minCost;
     int minIndex;
-    int lastNode = 0;
+    //int j = 0;
     path[0] = 1;
 
 	//initialize visited nodes
     int visitedNodes[n];
     
-   #pragma omp parallel for
+    #pragma omp parallel for num_threads(8) 
     for(int i = 0; i < n; i++){
         visitedNodes[i] = 0;
     }
     visitedNodes[0] = 1;
 
-    while(lastNode < n-1){
+    double minc;
+    int mini;
+
+    
+    for(int j = 0; j < n-1; j++){
         minCost = LONG_MAX;
-   #pragma omp parallel for schedule(dynamic,1)
-        for(int i = 0; i < n; i++){
-            if((cost[path[lastNode] - 1][i] < minCost) && (path[lastNode] - 1 != i) && (visitedNodes[i] == 0)){
-                minCost = cost[path[lastNode] - 1][i];
-                minIndex = i;
+        #pragma omp parallel num_threads(8) private(minc, mini) shared(minCost, minIndex)
+        {
+            minc = LONG_MAX;
+    
+        #pragma omp parallel for num_threads(8)
+            for(int i = 0; i < n; i++){
+
+            
+                if((cost[path[j] - 1][i] < minc) && (path[j] - 1 != i) && (visitedNodes[i] == 0)){
+                    minc = cost[path[j] - 1][i];
+                    mini = i;
+                }
+            }
+        #pragma omp critical
+            {
+                if(minc < minCost){
+                    minCost = minc;
+                    minIndex = mini;
+                }
             }
         }
-
-        lastNode++;
-        path[lastNode] = minIndex+1;
+        
+        path[j+1] = minIndex+1;
         sum += minCost;
         visitedNodes[minIndex] = 1;
         

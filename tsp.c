@@ -37,17 +37,23 @@ int main()
     printf("\n");
 
     //generate points in array and print
-    double pointsArr[n][3];
+    //double pointsArr[n][3];
+    double (*pointsArr)[n] = malloc(sizeof(double[n][3]));
+
     generatePoints(n, pointsArr, xRange, yRange, zRange);
-    printPointsArray(n, pointsArr);
+    //printPointsArray(n, pointsArr);
+    
     
     //generate 3d distance cost and print
-    double cost[n][n];
+    //double cost[n][n];
+    double (*cost)[n] = malloc(sizeof(double[n][n]));
     generateDistanceCost(n, pointsArr, cost);
-    printDistanceCostArray(n, cost);
+    
+    //printDistanceCostArray(n, cost);
 
     //final path salesman takes
-    int path[n];
+    //int path[n];
+    int *path = malloc(n * sizeof *path);
     //cost of final path
     double costSum;
 
@@ -61,7 +67,7 @@ int main()
 
 
     //print final path
-    printPathArray(n, path);
+    //printPathArray(n, path);
     
     printf("Minimum cost:\n%.6f\n", costSum);
     
@@ -72,7 +78,9 @@ int main()
 
     printf("Time: %.5f", timediff);
     printf("\n");
-
+    free(cost);
+    free(pointsArr);
+    free(path);
     return 0;
 
 }
