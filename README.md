@@ -21,7 +21,7 @@ Run:      mpiexec -n <number of threads> ./mpitsp
 
 PTHREAD
 
-Compile: 
+Compile:    gcc -g -Wall -o ptsp ptsp.c -lpthread -lm
 
 Run: 
 

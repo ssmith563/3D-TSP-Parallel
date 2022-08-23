@@ -9,42 +9,47 @@
 #include <pthread.h>
 
 //wip
-void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum);
+void* travellingSalesman(void* args);
 
 //done
 void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange, double zRange);
-void generateDistanceCost(int n, double pointsArr[n][3], double cost[n][n]);
+void generateDistanceCost(int n, double pointsArr[n][3], double** cost);
 
 //not implemented
 void printDistanceCostArray(int n, double arr[n][n]);
 void printPathArray(int n, int arr[n]);
 void printPointsArray(int n, double arr[n][3]);
 
+struct arg_struct {
+    int n;
+    int* path;
+    double** cost;
+    double costSum;
+    int thread_count;
+    //long id;
+};
 
-void * wThread(void* tid){
-
-    long* myID = (long*) tid;
-    printf("Thread: %ld\n", *myID);
-    
-
-}
-
-int main(){
+int main(int argc, char* argv[]){
+    long thread;
+    pthread_t* thread_handles;
+    long thread_count = strtol(argv[1], NULL, 10);
+    thread_handles = malloc(thread_count*sizeof(pthread_t));
 
     int n;
-    double xRange;
-    double yRange;
-    double zRange;
+    double costSum = 0;
+    double xRange = 10;
+    double yRange = 10;
+    double zRange = 10;
 
     printf("Enter x Range: ");
     fflush( stdout );
-    scanf("%lf", &xRange);
+    //scanf("%lf", &xRange);
     printf("\nEnter y Range: ");
     fflush( stdout );
-    scanf("%lf", &yRange);
+    //scanf("%lf", &yRange);
     printf("\nEnter z Range: ");
     fflush( stdout );
-    scanf("%lf", &zRange);
+    //scanf("%lf", &zRange);
     printf("\nEnter number of points: ");
     fflush( stdout );
     scanf("%d", &n);
@@ -52,8 +57,12 @@ int main(){
     
 
     double (*pointsArr)[n] = malloc(sizeof(double[n][3]));
-    double (*cost)[n] = malloc(sizeof(double[n][n]));
+    //double (*cost)[n] = malloc(sizeof(double[n][n]));
     int *path = malloc(n * sizeof *path);
+    double** cost = malloc(n*sizeof(double*));
+    for(int i = 0; i < n; i++){
+        cost[i] = malloc(n*sizeof(double));
+    }
 
     generatePoints(n, pointsArr, xRange, yRange, zRange);
     generateDistanceCost(n, pointsArr, cost);
@@ -62,36 +71,140 @@ int main(){
     clock_t start,end;
     start = clock();
 
-    pthread_t tid0;
-    pthread_t tid1;
-    pthread_t tid2;
-    pthread_t tid3;
-    pthread_t tid4;
-    pthread_t tid5;
+    struct arg_struct args;
+    //struct arg_struct *args = arguments;
+    args.n = n;
+    args.path = path;
+    args.cost = cost;
+    args.costSum = costSum;
+    args.thread_count = thread_count;
+    
+    
 
-    pthread_t* pthreads[] = {&tid0, &tid1, &tid2, &tid3, &tid4, &tid5};
-
-    for(int i = 0; i < 6; i++){
-   
-        //travellingSalesman();
-        pthread_create(pthreads[i], NULL, wThread, (void*)pthreads[i]);
-
+    for(thread = 0; thread < thread_count; thread++){
+        pthread_create(&thread_handles[thread], NULL, &travellingSalesman, (void *)&args);
     }
 
-    printf("Time: %.5f", timediff);
-    printf("\n");
+    
 
     end = clock();
     timediff = (double)(end - start) / CLOCKS_PER_SEC;
+    printf("Time: %.5f", timediff);
+    printf("\n");
 
+    for(int i = 0; i < n; i++){
+        free(cost[i]);
+    }
     free(cost);
     free(pointsArr);
     free(path);
+
 
     pthread_exit(NULL);
      
     
     return 0;
+}
+
+
+void* travellingSalesman(void* arguments)
+{
+    
+    struct arg_struct *args = arguments;
+	double sum = 0.0;
+    int minIndex;
+    args->path[0] = 1;
+
+	//initialize visited nodes
+    int visitedNodes[args->n];
+    for(int i = 0; i < args->n; i++){
+        visitedNodes[i] = 0;
+    }
+    visitedNodes[0] = 1;
+
+    double minc;
+    int mini;
+
+    int quotient = args->n/args->thread_count;
+    int remainder = args->n%args->thread_count;
+    int my_n_count;
+    int my_first_i;
+    int my_last_i;
+
+    double temp;
+
+    int my_rank = pthread_self();
+
+    if(my_rank < remainder){//splits n evenly among processes
+        my_n_count = quotient + 1;
+        my_first_i = my_rank*my_n_count;
+    }else{
+        my_n_count = quotient;
+        my_first_i = my_rank*my_n_count + remainder;
+    }       
+    my_last_i = my_first_i + my_n_count;
+
+    double tester;
+    for(int j = 0; j < args->n-1; j++){
+        minc = LONG_MAX;
+        mini = -1;
+        for(int i = my_first_i; i < my_last_i; i++){
+
+            //TESTING HERE - not actual part of code
+            printf("testing...\n");
+            tester = args->cost[0][i];
+            printf("%lf", tester);
+            //tester = args->cost[args->path[j] - 1][i];
+            printf("tested\n");
+
+
+
+            //seg faults on this line from accessing cost
+            if((args->cost[args->path[j] - 1][i] < minc) && (args->path[j] - 1 != i) && (visitedNodes[i] == 0)){
+                printf("3\n");
+                minc = args->cost[args->path[j] - 1][i];
+                mini = i;
+            }
+        }
+        printf("done\n");
+        if (my_rank != 0) { 
+            /* Send message to process 0 */
+             
+
+        }else{ 
+            minIndex = mini;
+            temp = LONG_MAX;
+            if(mini == -1){
+            }
+            else if(args->cost[args->path[j] - 1][mini] < temp){
+                minIndex = mini;
+                temp = args->cost[args->path[j] - 1][minIndex];
+            }
+
+            for (int q = 1; q < args->thread_count; q++) {
+                /* Receive message from process q */
+                
+                if(mini == -1){
+                }
+                else if(args->cost[args->path[j] - 1][mini] < temp){
+                    minIndex = mini;
+                    temp = args->cost[args->path[j] - 1][minIndex];
+                }
+                
+            }
+            args->path[j+1] = minIndex+1;
+            sum += args->cost[args->path[j] - 1][minIndex];
+            visitedNodes[minIndex] = 1;
+        }
+        //MPI_Bcast(path, n, MPI_INT, 0, MPI_COMM_WORLD);
+        //MPI_Bcast(visitedNodes, n, MPI_INT, 0, MPI_COMM_WORLD);
+    }
+    printf("4\n");
+    if(my_rank == 0){
+        args->costSum = sum + args->cost[args->path[args->n-1]-1][0];
+    }
+    //MPI_Bcast(costSum, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    return NULL;
 }
 
 void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange, double zRange){
@@ -106,7 +219,7 @@ void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange,
     }
 }
 
-void generateDistanceCost(int n, double pointsArr[n][3], double cost[n][n]){
+void generateDistanceCost(int n, double pointsArr[n][3], double** cost){
 
     double dist;
     double x2;
