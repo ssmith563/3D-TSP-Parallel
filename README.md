@@ -12,9 +12,11 @@ Run:       ./tsp
 
 MPI
 
-Compile: 
+Load:     module load mpi/openmpi-x86_64
 
-Run: 
+Compile:  mpicc -g -Wall -std=c99 -o mpitsp mpitsp.c -lm
+
+Run:      mpiexec -n <number of threads> ./mpitsp
 
 
 PTHREAD
