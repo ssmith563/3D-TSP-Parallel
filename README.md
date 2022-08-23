@@ -21,13 +21,16 @@ Run:      mpiexec -n <number of threads> ./mpitsp
 
 PTHREAD
 
-Compile:    gcc -g -Wall -o ptsp ptsp.c -lpthread -lm
+Compile:  gcc -g -Wall -o ptsp ptsp.c -lpthread -lm
 
-Run: 
+Run:      ./ptsp <num threads>  
 
 
 OPENMP
 
 Compile: gcc -g -Wall -o omptsp omptsp.c -lm -fopenmp
 
-Run: ./omptsp
+Run:      ./omptsp
+
+Once started, enter range for x, y, & z
+Then, enter a value for the number of nodes to visit. 
