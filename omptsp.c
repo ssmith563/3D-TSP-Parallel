@@ -10,46 +10,43 @@
 void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum);
 void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange, double zRange);
 void generateDistanceCost(int n, double pointsArr[n][3], double cost[n][n]);
-//void generateEnergyCost(int n, double pointsArr[n][3], double cost[n][n]);
 void printDistanceCostArray(int n, double arr[n][n]);
 void printPathArray(int n, int arr[n]);
 void printPointsArray(int n, double arr[n][3]);
 
 int main()
 {
-    double xRange = 10;
-    double yRange = 10;
-    double zRange = 10;
-    int n = 10000;
+    double xRange;
+    double yRange;
+    double zRange;
+    int n;
     
     //double start = omp_get_wtime();
 
     //Gets user input
     printf("Enter x Range: ");
-    //scanf("%lf", &xRange);
+    scanf("%lf", &xRange);
     printf("\nEnter y Range: ");
-    //scanf("%lf", &yRange);
+    scanf("%lf", &yRange);
     printf("\nEnter z Range: ");
-    //scanf("%lf", &zRange);
+    scanf("%lf", &zRange);
     printf("\nEnter number of points: ");
-    //scanf("%d", &n);
+    scanf("%d", &n);
     printf("\n");
 
     //generate points in array and print
-    //double pointsArr[n][3];
     double (*pointsArr)[n] = malloc(sizeof(double[n][3]));
     generatePoints(n, pointsArr, xRange, yRange, zRange);
     //printPointsArray(n, pointsArr);
     
     //generate 3d distance cost and print
-    //double cost[n][n];
     double (*cost)[n] = malloc(sizeof(double[n][n]));
     generateDistanceCost(n, pointsArr, cost);
     //printDistanceCostArray(n, cost);
 
     //final path salesman takes
-    //int path[n];
     int *path = malloc(n * sizeof *path);
+
     //cost of final path
     double costSum;
 
@@ -60,14 +57,10 @@ int main()
     double finish = omp_get_wtime();
     double elapsed = finish - start;
 
-    
-
     //print final path
     //printPathArray(n, path);
     
     printf("Minimum cost:\n%lf\n", costSum);
-    
-    
     
     printf("Exec took %f seconds\n", elapsed);
     free(cost);
@@ -79,16 +72,12 @@ int main()
 void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
 {
 	double sum = 0.0;
-	
-	
 	double minCost;
     int minIndex;
-    //int j = 0;
     path[0] = 1;
 
 	//initialize visited nodes
     int visitedNodes[n];
-    
     #pragma omp parallel for num_threads(8) 
     for(int i = 0; i < n; i++){
         visitedNodes[i] = 0;
@@ -97,15 +86,14 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
 
     double minc;
     int mini;
-
     
     for(int j = 0; j < n-1; j++){
         minCost = LONG_MAX;
         #pragma omp parallel num_threads(8) private(minc, mini) shared(minCost, minIndex)
         {
             minc = LONG_MAX;
-    
-        #pragma omp parallel for num_threads(8)
+            mini = 0;
+        #pragma omp parallel for num_threads(8) 
             for(int i = 0; i < n; i++){
 
             
@@ -115,12 +103,11 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
                 }
             }
         #pragma omp critical
-            {
-                if(minc < minCost){
-                    minCost = minc;
-                    minIndex = mini;
-                }
+            if(minc < minCost){
+                minCost = minc;
+                minIndex = mini;
             }
+            
         }
         
         path[j+1] = minIndex+1;
@@ -130,8 +117,6 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
     }
 
     *costSum = sum + cost[path[n-1]-1][0];
-    
-	
 }
 
 void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange, double zRange){
@@ -166,26 +151,6 @@ void generateDistanceCost(int n, double pointsArr[n][3], double cost[n][n]){
         }
     }
 }
-
-/*void generateEnergyCost(int n, double pointsArr[n][3], double cost[n][n]){
-    double dist;
-    double x2;
-    double y2;
-    double z2;
-    for(int i = 0; i < n; i++){
-        for(int j = i; j < n; j++){
-            if(j == i){
-                cost[j][j] = 0;
-            }
-            x2 = pow(pointsArr[i][0] - pointsArr[j][0], 2);
-            y2 = pow(pointsArr[i][1] - pointsArr[j][1], 2);
-            z2 = pow(pointsArr[i][2] - pointsArr[j][2], 2);
-            dist = pow(x2 + y2 + z2, .5);
-            cost[i][j] = dist;
-            cost[j][i] = dist;
-        }
-    }
-}**/
 
 void printDistanceCostArray(int n, double arr[n][n]){
     printf("Cost array elements:\n");
