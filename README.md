@@ -3,9 +3,9 @@ Parallel 3D Traveling Salesman Problem
 By Steven Smith and Matt Luckenbihl
 
 
-SERIAL
+SERIAL - (Using omp get wtime so need -fopenmp)
 
-Compile:   gcc -g -Wall -o tsp tsp.c -lm
+Compile:   gcc -g -Wall -o tsp tsp.c -lm -fopenmp
 
 Run:       ./tsp
 
