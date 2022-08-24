@@ -95,6 +95,7 @@ int main(int argc, char* argv[]){
     timediff = (double)(end - start) / CLOCKS_PER_SEC;
     printf("Time: %.5f", timediff);
     printf("\n");
+    printf("Cost: %lf\n", args.costSum);
 
     for(int i = 0; i < n; i++){
         free(cost[i]);
@@ -158,7 +159,7 @@ void *travellingSalesman(void* arguments)
     //my_rank = (long)id;
 
 
-    printf("RANK = %d", my_rank);
+    //printf("RANK = %d", my_rank);
 
     if(my_rank < remainder){//splits n evenly among processes
         my_n_count = quotient + 1;
@@ -169,45 +170,56 @@ void *travellingSalesman(void* arguments)
     }       
     my_last_i = my_first_i + my_n_count;
 
-    double** costPtr = args->cost;
+    
     double tester;
     double** ct = args->cost;
+
+    printf("testing...\n");
+    tester = ct[0][0];
+    printf("%lf ", tester);
+    tester = ct[0][1];
+    printf("%lf ", tester);
+    tester = ct[0][2];
+    printf("%lf ", tester);
+    tester = ct[0][3];
+    printf("%lf \n", tester);
+    tester = ct[1][0];
+    printf("%lf ", tester);
+    tester = ct[1][1];
+    printf("%lf ", tester);
+    tester = ct[1][2];
+    printf("%lf ", tester);
+    tester = ct[1][3];
+    printf("%lf \n", tester);
+    tester = ct[2][0];
+    printf("%lf ", tester);
+    tester = ct[2][1];
+    printf("%lf ", tester);
+    tester = ct[2][2];
+    printf("%lf ", tester);
+    tester = ct[2][3];
+    printf("%lf \n", tester);
+    tester = ct[3][0];
+    printf("%lf ", tester);
+    tester = ct[3][1];
+    printf("%lf ", tester);
+    tester = ct[3][2];
+    printf("%lf ", tester);
+    tester = ct[3][3];
+    printf("%lf ", tester);
+    printf("\nEnd testing\n");
 
     for(int j = 0; j < args->n-1; j++){
         minc = LONG_MAX;
         mini = -1;
         int pth = args->path[j] - 1;
         for(int i = my_first_i; i < my_last_i; i++){
-
-
-            printf("testing...\n");
-
-        
-
-            tester = *((*ct)+1);
-            printf("%lf", tester);
-            //tester = args->cost[args->path[j] - 1][i];
-            printf("tested\n");
-
-
-
-            //seg faults on this line from accessing cost
-
-            //int pth = args->path[j] - 1;
-
-            //printf("PTH: %d\n",pth);
-
-            //if((args->cost[args->path[j] - 1][i] < minc) && (args->path[j] - 1 != i) && (visitedNodes[i] == 0)){
-            //if((*((*ct+((args->path[j])-1)+i))<minc) && (args->path[j] - 1 != i) && visitedNodes[i] == 0){
-            
-            if((*((*ct + pth)+i)) < minc && (pth != i) && visitedNodes[i] == 0){
-                printf("3\n");
-                minc = (*((*ct+pth)+i));
+            if( (ct[pth][i] < minc) && (pth != i) && (visitedNodes[i] == 0)){
+                minc = ct[pth][i];
                 mini = i;
             }
             
         }
-        //printf("done\n");
         if (my_rank != 0) { 
             /* Send message to process 0 */
              
@@ -217,9 +229,9 @@ void *travellingSalesman(void* arguments)
             temp = LONG_MAX;
             if(mini == -1){
             }
-            else if((*((*ct + pth)+mini))< temp){
+            else if( ct[pth][mini] < temp){
                 minIndex = mini;
-                temp = (*((*ct + pth)+minIndex));
+                temp = ct[pth][minIndex];
             }
 
             for (int q = 1; q < args->thread_count; q++) {
@@ -227,14 +239,14 @@ void *travellingSalesman(void* arguments)
                 
                 if(mini == -1){
                 }
-                else if((*((*ct + pth)+mini)) < temp){
+                else if( ct[pth][mini] < temp){
                     minIndex = mini;
-                    temp = (*((*ct + pth)+minIndex));
+                    temp = ct[pth][minIndex];
                 }
                 
             }
             args->path[j+1] = minIndex+1;
-            sum += *((*ct+ pth)+ minIndex);
+            sum += ct[pth][minIndex];
             visitedNodes[minIndex] = 1;
         }
         //MPI_Bcast(path, n, MPI_INT, 0, MPI_COMM_WORLD);
@@ -245,7 +257,7 @@ void *travellingSalesman(void* arguments)
         int new = args->n-1;
         int ptt = args->path[new]-1;
 
-        args->costSum = sum + *((*ct+ptt )+ 0);  //args->cost[args->path[args->n-1]-1][0];
+        args->costSum = sum + ct[ptt][0];  //args->cost[args->path[args->n-1]-1][0];
     }
     //MPI_Bcast(costSum, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     return NULL;
@@ -274,12 +286,15 @@ void generateDistanceCost(int n, double pointsArr[n][3], double** cost){
         for(int j = i; j < n; j++){
             if(j == i){
                 cost[j][j] = 0;
+                //*((*cost + j)+j) = 0;
             }
             x2 = pow(pointsArr[i][0] - pointsArr[j][0], 2);
             y2 = pow(pointsArr[i][1] - pointsArr[j][1], 2);
             z2 = pow(pointsArr[i][2] - pointsArr[j][2], 2);
 
             dist = pow(x2 + y2 + z2, .5);
+            //*((*cost + i)+j) = dist;
+            //*((*cost + j)+i) = dist;
             cost[i][j] = dist;
             cost[j][i] = dist;
         }
