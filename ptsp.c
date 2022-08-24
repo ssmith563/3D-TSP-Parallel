@@ -21,13 +21,20 @@ void printDistanceCostArray(int n, double arr[n][n]);
 void printPathArray(int n, int arr[n]);
 void printPointsArray(int n, double arr[n][3]);
 
+pthread_mutex_t lock;
+pthread_mutex_t barrier;
+
 struct arg_struct {
     int n;
     int* path;
+    int* visitedNodes;
     double** cost;
     double costSum;
     int thread_count;
     int id;
+    double mincost;
+    int minindex;
+    int counter;
 };
 
 int main(int argc, char* argv[]){
@@ -60,6 +67,12 @@ int main(int argc, char* argv[]){
     double (*pointsArr)[n] = malloc(sizeof(double[n][3]));
     //double (*cost)[n] = malloc(sizeof(double[n][n]));
     int *path = malloc(n * sizeof *path);
+    int *visitedNodes = malloc(n * sizeof *path);
+    for(int i = 0; i < n; i++){
+        visitedNodes[i] = 0;
+    }
+    visitedNodes[0] = 1;
+
     double** cost = malloc(n*sizeof(double*));
     for(int i = 0; i < n; i++){
         cost[i] = malloc(n*sizeof(double));
@@ -79,6 +92,10 @@ int main(int argc, char* argv[]){
     args.cost = cost;
     args.costSum = costSum;
     args.thread_count = thread_count;
+    args.mincost = LONG_MAX;
+    args.minindex = -1;
+    args.counter = 0;
+    args.visitedNodes = visitedNodes;
     
     
 
@@ -128,17 +145,10 @@ void *travellingSalesman(void* arguments)
 {
     
     struct arg_struct *args = arguments;
-	double sum = 0.0;
-    int minIndex;
+	//double sum = 0.0;
+    //int minIndex;
     args->path[0] = 1;
-    
 
-	//initialize visited nodes
-    int visitedNodes[args->n];
-    for(int i = 0; i < args->n; i++){
-        visitedNodes[i] = 0;
-    }
-    visitedNodes[0] = 1;
 
     double minc;
     int mini;
@@ -149,14 +159,9 @@ void *travellingSalesman(void* arguments)
     int my_first_i;
     int my_last_i;
 
-    double temp;
     
-
-
-    ///////
     int my_rank = args->id;
-    //long my_rank;
-    //my_rank = (long)id;
+    
 
 
     //printf("RANK = %d", my_rank);
@@ -171,9 +176,9 @@ void *travellingSalesman(void* arguments)
     my_last_i = my_first_i + my_n_count;
 
     
-    double tester;
+    //double tester;
     double** ct = args->cost;
-
+    /**
     printf("testing...\n");
     tester = ct[0][0];
     printf("%lf ", tester);
@@ -209,57 +214,56 @@ void *travellingSalesman(void* arguments)
     printf("%lf ", tester);
     printf("\nEnd testing\n");
 
+    printf("%d\n", my_rank);
+    */
+
     for(int j = 0; j < args->n-1; j++){
         minc = LONG_MAX;
         mini = -1;
         int pth = args->path[j] - 1;
         for(int i = my_first_i; i < my_last_i; i++){
-            if( (ct[pth][i] < minc) && (pth != i) && (visitedNodes[i] == 0)){
+            if( (ct[pth][i] < minc) && (pth != i) && (args->visitedNodes[i] == 0)){
                 minc = ct[pth][i];
                 mini = i;
             }
             
         }
-        if (my_rank != 0) { 
-            /* Send message to process 0 */
-             
 
-        }else{ 
-            minIndex = mini;
-            temp = LONG_MAX;
-            if(mini == -1){
-            }
-            else if( ct[pth][mini] < temp){
-                minIndex = mini;
-                temp = ct[pth][minIndex];
-            }
-
-            for (int q = 1; q < args->thread_count; q++) {
-                /* Receive message from process q */
-                
-                if(mini == -1){
-                }
-                else if( ct[pth][mini] < temp){
-                    minIndex = mini;
-                    temp = ct[pth][minIndex];
-                }
-                
-            }
-            args->path[j+1] = minIndex+1;
-            sum += ct[pth][minIndex];
-            visitedNodes[minIndex] = 1;
+        pthread_mutex_lock(&lock);
+        if(minc < args->mincost){
+            //printf("enter mutex 1");
+            args->mincost = minc;
+            args->minindex = mini;
         }
-        //MPI_Bcast(path, n, MPI_INT, 0, MPI_COMM_WORLD);
-        //MPI_Bcast(visitedNodes, n, MPI_INT, 0, MPI_COMM_WORLD);
+        pthread_mutex_unlock(&lock);
+
+
+        pthread_mutex_lock(&barrier);
+        args->counter++;
+        pthread_mutex_unlock(&barrier);
+        while(args->counter < args->thread_count){
+
+        }
+
+
+
+        if (my_rank == 0) { 
+            args->path[j+1] = args->minindex+1;
+            args->costSum += args->mincost;//ct[pth][args->minindex];
+            args->visitedNodes[args->minindex] = 1;
+            args->counter = 0;
+            args->mincost = LONG_MAX;
+            args->minindex = -1;
+        }
     }
     
     if(my_rank == 0){
         int new = args->n-1;
         int ptt = args->path[new]-1;
 
-        args->costSum = sum + ct[ptt][0];  //args->cost[args->path[args->n-1]-1][0];
+        args->costSum += ct[ptt][0];  
     }
-    //MPI_Bcast(costSum, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    
     return NULL;
 }
 
