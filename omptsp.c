@@ -21,7 +21,6 @@ int main()
     double zRange;
     int n;
     
-    //double start = omp_get_wtime();
 
     //Gets user input
     printf("Enter x Range: ");

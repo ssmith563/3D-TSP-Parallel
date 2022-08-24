@@ -20,10 +20,10 @@ int main()
     int comm_sz;
     int my_rank;
     int n;
-    double xRange = 10;
-    double yRange = 10;
-    double zRange = 10;
-    //printf("Enter x Range: ");
+    double xRange;
+    double yRange;
+    double zRange;
+    
     
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
@@ -34,13 +34,13 @@ int main()
         //Gets user input
         printf("Enter x Range: ");
         fflush( stdout );
-        //scanf("%lf", &xRange);
+        scanf("%lf", &xRange);
         printf("\nEnter y Range: ");
         fflush( stdout );
-        //scanf("%lf", &yRange);
+        scanf("%lf", &yRange);
         printf("\nEnter z Range: ");
         fflush( stdout );
-        //scanf("%lf", &zRange);
+        scanf("%lf", &zRange);
         printf("\nEnter number of points: ");
         fflush( stdout );
         scanf("%d", &n);
@@ -90,9 +90,6 @@ int main()
         finish = MPI_Wtime();
         elapsed = finish - start;
         printf("Exec took %f seconds\n", elapsed);
-
-        //print final path
-        //printPathArray(n, path);
     
         printf("Minimum cost:\n%lf\n", costSum);
     }

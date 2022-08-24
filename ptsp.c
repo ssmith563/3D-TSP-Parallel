@@ -23,6 +23,8 @@ void printPointsArray(int n, double arr[n][3]);
 
 pthread_mutex_t lock;
 pthread_mutex_t barrier;
+pthread_mutex_t barrier1;
+pthread_mutex_t barrier2;
 
 struct arg_struct {
     int n;
@@ -31,10 +33,12 @@ struct arg_struct {
     double** cost;
     double costSum;
     int thread_count;
-    int id;
+    long id;
     double mincost;
     int minindex;
     int counter;
+    int counter2;
+    int counter3;
 };
 
 int main(int argc, char* argv[]){
@@ -45,19 +49,19 @@ int main(int argc, char* argv[]){
 
     int n;
     double costSum = 0;
-    double xRange = 10;
-    double yRange = 10;
-    double zRange = 10;
+    double xRange;
+    double yRange;
+    double zRange;
 
     printf("Enter x Range: ");
     fflush( stdout );
-    //scanf("%lf", &xRange);
+    scanf("%lf", &xRange);
     printf("\nEnter y Range: ");
     fflush( stdout );
-    //scanf("%lf", &yRange);
+    scanf("%lf", &yRange);
     printf("\nEnter z Range: ");
     fflush( stdout );
-    //scanf("%lf", &zRange);
+    scanf("%lf", &zRange);
     printf("\nEnter number of points: ");
     fflush( stdout );
     scanf("%d", &n);
@@ -65,7 +69,6 @@ int main(int argc, char* argv[]){
     
 
     double (*pointsArr)[n] = malloc(sizeof(double[n][3]));
-    //double (*cost)[n] = malloc(sizeof(double[n][n]));
     int *path = malloc(n * sizeof *path);
     int *visitedNodes = malloc(n * sizeof *path);
     for(int i = 0; i < n; i++){
@@ -86,7 +89,6 @@ int main(int argc, char* argv[]){
     start = clock();
 
     struct arg_struct args;
-    //struct arg_struct *args = arguments;
     args.n = n;
     args.path = path;
     args.cost = cost;
@@ -96,11 +98,13 @@ int main(int argc, char* argv[]){
     args.minindex = -1;
     args.counter = 0;
     args.visitedNodes = visitedNodes;
+    args.id = LONG_MAX;
+    args.counter2 = 0;
+    args.counter3 = 0;
     
     
 
     for(thread = 0; thread < thread_count; thread++){
-        args.id = (int)thread;
         pthread_create(&thread_handles[thread], NULL, &travellingSalesman, (void *)&args);
     }
 
@@ -121,10 +125,8 @@ int main(int argc, char* argv[]){
     free(pointsArr);
     free(path);
 
-
     pthread_exit(NULL);
      
-    
     return 0;
 }
 
@@ -143,12 +145,8 @@ uint64_t gettid() {
 
 void *travellingSalesman(void* arguments)
 {
-    
     struct arg_struct *args = arguments;
-	//double sum = 0.0;
-    //int minIndex;
     args->path[0] = 1;
-
 
     double minc;
     int mini;
@@ -158,13 +156,12 @@ void *travellingSalesman(void* arguments)
     int my_n_count;
     int my_first_i;
     int my_last_i;
-
+    int my_rank;
     
-    int my_rank = args->id;
-    
-
-
-    //printf("RANK = %d", my_rank);
+    pthread_mutex_lock(&lock);
+    my_rank = args->counter2;
+    args->counter2++;
+    pthread_mutex_unlock(&lock);
 
     if(my_rank < remainder){//splits n evenly among processes
         my_n_count = quotient + 1;
@@ -174,48 +171,8 @@ void *travellingSalesman(void* arguments)
         my_first_i = my_rank*my_n_count + remainder;
     }       
     my_last_i = my_first_i + my_n_count;
-
     
-    //double tester;
     double** ct = args->cost;
-    /**
-    printf("testing...\n");
-    tester = ct[0][0];
-    printf("%lf ", tester);
-    tester = ct[0][1];
-    printf("%lf ", tester);
-    tester = ct[0][2];
-    printf("%lf ", tester);
-    tester = ct[0][3];
-    printf("%lf \n", tester);
-    tester = ct[1][0];
-    printf("%lf ", tester);
-    tester = ct[1][1];
-    printf("%lf ", tester);
-    tester = ct[1][2];
-    printf("%lf ", tester);
-    tester = ct[1][3];
-    printf("%lf \n", tester);
-    tester = ct[2][0];
-    printf("%lf ", tester);
-    tester = ct[2][1];
-    printf("%lf ", tester);
-    tester = ct[2][2];
-    printf("%lf ", tester);
-    tester = ct[2][3];
-    printf("%lf \n", tester);
-    tester = ct[3][0];
-    printf("%lf ", tester);
-    tester = ct[3][1];
-    printf("%lf ", tester);
-    tester = ct[3][2];
-    printf("%lf ", tester);
-    tester = ct[3][3];
-    printf("%lf ", tester);
-    printf("\nEnd testing\n");
-
-    printf("%d\n", my_rank);
-    */
 
     for(int j = 0; j < args->n-1; j++){
         minc = LONG_MAX;
@@ -228,39 +185,49 @@ void *travellingSalesman(void* arguments)
             }
             
         }
-
+        //update mincost to minimum of local costs
         pthread_mutex_lock(&lock);
         if(minc < args->mincost){
-            //printf("enter mutex 1");
             args->mincost = minc;
             args->minindex = mini;
         }
         pthread_mutex_unlock(&lock);
 
-
+        //barrier
         pthread_mutex_lock(&barrier);
         args->counter++;
         pthread_mutex_unlock(&barrier);
         while(args->counter < args->thread_count){
 
         }
-
-
-
+        
         if (my_rank == 0) { 
             args->path[j+1] = args->minindex+1;
-            args->costSum += args->mincost;//ct[pth][args->minindex];
+            args->costSum += args->mincost;
             args->visitedNodes[args->minindex] = 1;
-            args->counter = 0;
             args->mincost = LONG_MAX;
             args->minindex = -1;
+            
         }
+        
+        //change counter to 0 and barrier
+        pthread_mutex_lock(&barrier1);
+        args->counter = 0;
+        args->counter3++;
+        pthread_mutex_unlock(&barrier1);
+        while(args->counter3 < args->thread_count){
+
+        }
+        
+        //change second counter to 0
+        pthread_mutex_lock(&barrier2);
+        args->counter3 = 0;
+        pthread_mutex_unlock(&barrier2);
     }
     
     if(my_rank == 0){
         int new = args->n-1;
         int ptt = args->path[new]-1;
-
         args->costSum += ct[ptt][0];  
     }
     
