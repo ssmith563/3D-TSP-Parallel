@@ -37,12 +37,12 @@ int main()
     //generate points in array and print
     double (*pointsArr)[n] = malloc(sizeof(double[n][3]));
     generatePoints(n, pointsArr, xRange, yRange, zRange);
-    //printPointsArray(n, pointsArr);
+    printPointsArray(n, pointsArr);
     
     //generate 3d distance cost and print
     double (*cost)[n] = malloc(sizeof(double[n][n]));
     generateDistanceCost(n, pointsArr, cost);
-    //printDistanceCostArray(n, cost);
+    printDistanceCostArray(n, cost);
 
     //final path salesman takes
     int *path = malloc(n * sizeof *path);

@@ -26,7 +26,7 @@ struct arg_struct {
     double** cost;
     double costSum;
     int thread_count;
-    //long id;
+    long id;
 };
 
 int main(int argc, char* argv[]){
@@ -82,10 +82,13 @@ int main(int argc, char* argv[]){
     
 
     for(thread = 0; thread < thread_count; thread++){
+        args.id = thread;
         pthread_create(&thread_handles[thread], NULL, &travellingSalesman, (void *)&args);
     }
 
-    
+    for(thread = 0; thread < thread_count; thread++){
+        pthread_join(thread_handles[thread], NULL);
+    }
 
     end = clock();
     timediff = (double)(end - start) / CLOCKS_PER_SEC;
@@ -114,6 +117,7 @@ void* travellingSalesman(void* arguments)
 	double sum = 0.0;
     int minIndex;
     args->path[0] = 1;
+    
 
 	//initialize visited nodes
     int visitedNodes[args->n];
@@ -132,9 +136,11 @@ void* travellingSalesman(void* arguments)
     int my_last_i;
 
     double temp;
+    
 
-    int my_rank = pthread_self();
-
+    long my_rank = args->id;
+    //printf("%ld", my_rank);
+    
     if(my_rank < remainder){//splits n evenly among processes
         my_n_count = quotient + 1;
         my_first_i = my_rank*my_n_count;
@@ -144,29 +150,36 @@ void* travellingSalesman(void* arguments)
     }       
     my_last_i = my_first_i + my_n_count;
 
+    double** costPtr = args->cost;
     double tester;
     for(int j = 0; j < args->n-1; j++){
         minc = LONG_MAX;
         mini = -1;
         for(int i = my_first_i; i < my_last_i; i++){
 
-            //TESTING HERE - not actual part of code
+
             printf("testing...\n");
-            tester = args->cost[0][i];
-            printf("%lf", tester);
-            //tester = args->cost[args->path[j] - 1][i];
-            printf("tested\n");
-
-
-
+            tester = *((*costPtr+0)+0);
+            printf("%lf\n", tester );
+            tester = *((*costPtr+0)+1);
+            printf("%lf\n", tester );
+            tester = *((*costPtr+0)+2);
+            printf("%lf\n", tester );
+            tester = *((*costPtr+1)+0);
+            printf("%lf\n", tester );
+            tester = *((*costPtr+1)+1);
+            printf("%lf\n", tester );
+            tester = *((*costPtr+1)+2);
+            printf("%lf\n", tester );
             //seg faults on this line from accessing cost
-            if((args->cost[args->path[j] - 1][i] < minc) && (args->path[j] - 1 != i) && (visitedNodes[i] == 0)){
-                printf("3\n");
-                minc = args->cost[args->path[j] - 1][i];
+            if((  *((*costPtr+args->path[j] - 1)+i) < minc) && (args->path[j] - 1 != i) && (visitedNodes[i] == 0)){
+                //printf("3\n");
+                minc = *((*costPtr+args->path[j] - 1)+i);
                 mini = i;
             }
+
         }
-        printf("done\n");
+        //printf("done\n");
         if (my_rank != 0) { 
             /* Send message to process 0 */
              
@@ -176,9 +189,9 @@ void* travellingSalesman(void* arguments)
             temp = LONG_MAX;
             if(mini == -1){
             }
-            else if(args->cost[args->path[j] - 1][mini] < temp){
+            else if(*((*costPtr+args->path[j] - 1)+mini) < temp){
                 minIndex = mini;
-                temp = args->cost[args->path[j] - 1][minIndex];
+                temp = *((*costPtr+args->path[j] - 1)+minIndex);
             }
 
             for (int q = 1; q < args->thread_count; q++) {
@@ -186,20 +199,20 @@ void* travellingSalesman(void* arguments)
                 
                 if(mini == -1){
                 }
-                else if(args->cost[args->path[j] - 1][mini] < temp){
+                else if( *((*costPtr+args->path[j] - 1)+mini) < temp){
                     minIndex = mini;
-                    temp = args->cost[args->path[j] - 1][minIndex];
+                    temp = *((*costPtr+args->path[j] - 1)+minIndex);
                 }
                 
             }
             args->path[j+1] = minIndex+1;
-            sum += args->cost[args->path[j] - 1][minIndex];
+            sum += *((*costPtr+args->path[j] - 1)+minIndex);
             visitedNodes[minIndex] = 1;
         }
         //MPI_Bcast(path, n, MPI_INT, 0, MPI_COMM_WORLD);
         //MPI_Bcast(visitedNodes, n, MPI_INT, 0, MPI_COMM_WORLD);
     }
-    printf("4\n");
+    
     if(my_rank == 0){
         args->costSum = sum + args->cost[args->path[args->n-1]-1][0];
     }
