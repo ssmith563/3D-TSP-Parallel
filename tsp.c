@@ -10,7 +10,7 @@
 void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum);
 void generatePoints(int n, double pointsArr[n][3], double xRange, double yRange, double zRange);
 void generateDistanceCost(int n, double pointsArr[n][3], double cost[n][n]);
-//void generateEnergyCost(int n, double pointsArr[n][3], double cost[n][n]);
+void generateEnergyCost(int n, double pointsArr[n][3], double cost[n][n]);
 void printDistanceCostArray(int n, double arr[n][n]);
 void printPathArray(int n, int arr[n]);
 void printPointsArray(int n, double arr[n][3]);
@@ -154,25 +154,47 @@ void generateDistanceCost(int n, double pointsArr[n][3], double cost[n][n]){
     }
 }
 
-/*void generateEnergyCost(int n, double pointsArr[n][3], double cost[n][n]){
-    double dist;
-    double x2;
-    double y2;
-    double z2;
-    for(int i = 0; i < n; i++){
-        for(int j = i; j < n; j++){
-            if(j == i){
-                cost[j][j] = 0;
-            }
-            x2 = pow(pointsArr[i][0] - pointsArr[j][0], 2);
-            y2 = pow(pointsArr[i][1] - pointsArr[j][1], 2);
-            z2 = pow(pointsArr[i][2] - pointsArr[j][2], 2);
-            dist = pow(x2 + y2 + z2, .5);
-            cost[i][j] = dist;
-            cost[j][i] = dist;
-        }
-    }
-}**/
+
+void generateEnergyCost(int n, double pointsArr[n][3], double cost[n][n]){
+     double dist_to;
+     double dist_from;
+     double x2;
+     double y2;
+     double z2;
+
+     double elev;
+
+     for(int i = 0; i < n; i++){
+         for(int j = i; j < n; j++){
+             if(j == i){
+                 cost[j][j] = 0;
+             }
+             x2 = pow(pointsArr[i][0] - pointsArr[j][0], 2);
+             y2 = pow(pointsArr[i][1] - pointsArr[j][1], 2);
+
+             //z2 = pow(pointsArr[i][2] - pointsArr[j][2], 2);
+
+             elev = pointsArr[j][2] - pointsArr[i][2];
+
+             if(elev > 0){
+                 z2 = pow(elev, 2);
+                 dist_to = pow(x2 + y2, .5) + z2;
+                 dist_from = pow(x2 + y2, .5) - z2;
+             }
+             else {
+                 elev = elev * -1;
+                 z2 = pow(elev, 0.5);
+                 dist_to = pow(x2 + y2, .5) - z2;
+                 dist_from = pow(x2 + y2, .5) + z2;
+             }
+
+             if(dist_from < 0) dist_from = 0;
+             cost[i][j] = dist_to;
+             cost[j][i] = dist_from;
+         }
+     }
+ }
+
 
 void printDistanceCostArray(int n, double arr[n][n]){
     printf("Cost array elements:\n");
