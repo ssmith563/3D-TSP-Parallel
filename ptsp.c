@@ -26,6 +26,7 @@ pthread_mutex_t barrier;
 pthread_mutex_t barrier1;
 pthread_mutex_t barrier2;
 
+//struct that acts as input to TSP function
 struct arg_struct {
     int n;
     int* path;
@@ -52,7 +53,8 @@ int main(int argc, char* argv[]){
     double xRange;
     double yRange;
     double zRange;
-
+    
+    //user input
     printf("Enter x Range: ");
     fflush( stdout );
     scanf("%lf", &xRange);
@@ -67,7 +69,7 @@ int main(int argc, char* argv[]){
     scanf("%d", &n);
     printf("\n");
     
-
+    //initialize arrays on heap
     double (*pointsArr)[n] = malloc(sizeof(double[n][3]));
     int *path = malloc(n * sizeof *path);
     int *visitedNodes = malloc(n * sizeof *path);
@@ -81,13 +83,16 @@ int main(int argc, char* argv[]){
         cost[i] = malloc(n*sizeof(double));
     }
 
+    //generate 3d points and distance cost array
     generatePoints(n, pointsArr, xRange, yRange, zRange);
     generateDistanceCost(n, pointsArr, cost);
 
+    //intitialize time
     double timediff;
     clock_t start,end;
     start = clock();
 
+    //set struct values for in put
     struct arg_struct args;
     args.n = n;
     args.path = path;
@@ -103,21 +108,24 @@ int main(int argc, char* argv[]){
     args.counter3 = 0;
     
     
-
+    //create threads and run TSP function
     for(thread = 0; thread < thread_count; thread++){
         pthread_create(&thread_handles[thread], NULL, &travellingSalesman, (void *)&args);
     }
 
+    //join threads
     for(thread = 0; thread < thread_count; thread++){
         pthread_join(thread_handles[thread], NULL);
     }
 
+    //calculate total time
     end = clock();
     timediff = (double)(end - start) / CLOCKS_PER_SEC;
     printf("Time: %.5f", timediff);
     printf("\n");
     printf("Cost: %lf\n", args.costSum);
 
+    //free up space on heap
     for(int i = 0; i < n; i++){
         free(cost[i]);
     }
@@ -158,12 +166,14 @@ void *travellingSalesman(void* arguments)
     int my_last_i;
     int my_rank;
     
+    //set rank value for each thread
     pthread_mutex_lock(&lock);
     my_rank = args->counter2;
     args->counter2++;
     pthread_mutex_unlock(&lock);
 
-    if(my_rank < remainder){//splits n evenly among processes
+    //splits n evenly among processes
+    if(my_rank < remainder){
         my_n_count = quotient + 1;
         my_first_i = my_rank*my_n_count;
     }else{
@@ -174,10 +184,12 @@ void *travellingSalesman(void* arguments)
     
     double** ct = args->cost;
 
+    //loop that iterates through path array to set each index to solution calculated 
     for(int j = 0; j < args->n-1; j++){
         minc = LONG_MAX;
         mini = -1;
         int pth = args->path[j] - 1;
+        //parallelized loop that finds closest available node to previous node in path array
         for(int i = my_first_i; i < my_last_i; i++){
             if( (ct[pth][i] < minc) && (pth != i) && (args->visitedNodes[i] == 0)){
                 minc = ct[pth][i];
@@ -198,9 +210,9 @@ void *travellingSalesman(void* arguments)
         args->counter++;
         pthread_mutex_unlock(&barrier);
         while(args->counter < args->thread_count){
-
         }
         
+        //update values to calculated minimum
         if (my_rank == 0) { 
             args->path[j+1] = args->minindex+1;
             args->costSum += args->mincost;

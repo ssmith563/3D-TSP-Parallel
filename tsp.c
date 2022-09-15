@@ -57,23 +57,20 @@ int main()
     start = clock();
     //main tsp function
     travellingSalesman(n, path, cost, &costSum);
+
+    //calculate time and print
     end = clock();
     timediff = (double)(end - start) / CLOCKS_PER_SEC;
+    printf("Time: %.5f", timediff);
 
-
+    //print min cost
+    printf("Minimum cost:\n%.6f\n", costSum);
+    printf("\n");
 
     //print final path
     //printPathArray(n, path);
     
-    printf("Minimum cost:\n%.6f\n", costSum);
-    
-    
-
-   
-    
-
-    printf("Time: %.5f", timediff);
-    printf("\n");
+    //free space on heap
     free(cost);
     free(pointsArr);
     free(path);
@@ -96,8 +93,10 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
     }
     visitedNodes[0] = 1;
 
+    //loop that iterates through path array to set each index to solution calculated 
     while(lastNode < n-1){
         minCost = LONG_MAX;
+        //loop that finds closest available node to previous node in path array
         for(int i = 0; i < n; i++){
             if((cost[path[lastNode] - 1][i] < minCost) && (path[lastNode] - 1 != i) && (visitedNodes[i] == 0)){
                 minCost = cost[path[lastNode] - 1][i];

@@ -51,17 +51,19 @@ int main()
 
     double start = omp_get_wtime();
 
-    //main tsp function
+    //TSP function
     travellingSalesman(n, path, cost, &costSum);
+
+    //calculate time
     double finish = omp_get_wtime();
-    double elapsed = finish - start;
+    double elapsed = finish - start; 
+    printf("Minimum cost:\n%lf\n", costSum);
+    printf("Exec took %f seconds\n", elapsed);
 
     //print final path
     //printPathArray(n, path);
-    
-    printf("Minimum cost:\n%lf\n", costSum);
-    
-    printf("Exec took %f seconds\n", elapsed);
+
+    //delete arrays on heap
     free(cost);
     free(pointsArr);
     free(path);
@@ -86,13 +88,16 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
     double minc;
     int mini;
     
+    //loop that iterates through path array to set each index to solution calculated 
     for(int j = 0; j < n-1; j++){
         minCost = LONG_MAX;
+        //initialize 8 parallel threads
         #pragma omp parallel num_threads(8) private(minc, mini) shared(minCost, minIndex)
         {
             minc = LONG_MAX;
             mini = 0;
         #pragma omp parallel for num_threads(8) 
+        //parallelized loop that finds closest available node to previous node in path array
             for(int i = 0; i < n; i++){
 
             
@@ -101,6 +106,7 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
                     mini = i;
                 }
             }
+        //critical section to find total min cost
         #pragma omp critical
             if(minc < minCost){
                 minCost = minc;
@@ -108,13 +114,14 @@ void travellingSalesman(int n, int path[n], double cost[n][n], double * costSum)
             }
             
         }
-        
+        // updates path, sum, and visited nodes
         path[j+1] = minIndex+1;
         sum += minCost;
         visitedNodes[minIndex] = 1;
         
     }
 
+    //sets final cost sum
     *costSum = sum + cost[path[n-1]-1][0];
 }
 
